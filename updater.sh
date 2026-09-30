@@ -21,7 +21,7 @@ update_needed() {
     remote_date="$( curl --silent --head "$2" 2>/dev/null| grep --ignore-case "last-modified:" | cut --delimiter=' ' --fields=2-)"
     if [ -z "$remote_date" ]; then
         printf "${RED}Failed to get remote file info for $2${NC}\n" >&2
-        return 1
+        return 3
     fi
     
     local_date=$(stat --format='%y' "$1")
@@ -105,15 +105,20 @@ update_url() {
 	return 1
     fi
     printf "${BLUE}Found $NAME $EDITION release: $RELEASE${NC}\n"
-    if [ "$1" ] || update_needed "$iso_name" "${ISO_DIR}${iso_name}"; then
-        printf "${CYAN}Updating $NAME to $RELEASE release...${NC}\n"
-        wget --no-verbose --show-progress -O "$iso_name" "${ISO_DIR}${iso_name}" || return 1
-        printf "${GREEN}Updated $NAME to release $RELEASE${NC}\n"
-	if [ "$sig_name" = "skip" ]; then
-	    printf "${YELLOW}Skipping checksum check${NC}\n"
-	else
-            verify_checksum "$iso_name" "${ISO_DIR}${sig_name}" || return $?
-	fi
-    fi
+    update_needed "$iso_name" "${ISO_DIR}${iso_name}"
+    case $? in
+        0|2)  printf "${CYAN}Updating $NAME to $RELEASE release...${NC}\n"
+            wget --no-verbose --show-progress -O "$iso_name" "${ISO_DIR}${iso_name}" || return 1
+            printf "${GREEN}Updated $NAME to release $RELEASE${NC}\n"
+	    if [ "$sig_name" = "skip" ]; then
+	        printf "${YELLOW}Skipping checksum check${NC}\n"
+	    else
+                verify_checksum "$iso_name" "${ISO_DIR}${sig_name}" || return $?
+	    fi
+	;;
+	3)  printf "${RED}Skipping update due to an error${NC}\n"
+	    return 3 ;;
+    esac
+	    
     unset NAME BASE_URL EDITION RELEASE ISO_DIR iso_name sig_name
 }
