@@ -20,7 +20,7 @@ update_needed() {
     
     remote_date="$( curl --silent --head "$2" 2>/dev/null| grep --ignore-case "last-modified:" | cut --delimiter=' ' --fields=2-)"
     if [ -z "$remote_date" ]; then
-        echo "${RED}Failed to get remote file info for $2${NC}" >&2
+        printf "${RED}Failed to get remote file info for $2${NC}\n" >&2
         return 1
     fi
     
@@ -31,16 +31,16 @@ update_needed() {
     local_timestamp="$( date --date="$local_date"  +%s 2>/dev/null)"
     
     if [ -z "$remote_timestamp" ] || [ -z "$local_timestamp" ]; then
-        echo "${YELLOW}Warning: Could not parse file dates, skipping update check${NC}"
-	echo "${YELLOW} (remote: $remote_date, local: $local_date)${NC}"
+        printf "${YELLOW}Warning: Could not parse file dates, skipping update check${NC}\n"
+	printf "${YELLOW} (remote: $remote_date, local: $local_date)${NC}\n"
         return 2  # Unable to determine
     fi
     
     if [ $remote_timestamp -gt $local_timestamp ]; then
-        echo "${CYAN}Remote file is newer: local=$local_date, remote=$remote_date${NC}"
+        printf "${CYAN}Remote file is newer: local=$local_date, remote=$remote_date${NC}\n"
         return 0
     else	
-        echo "${GREEN}Local file is up-to-date (date: $local_date)${NC}"
+        printf "${GREEN}Local file is up-to-date (date: $local_date)${NC}\n"
         return 1
     fi
 }
@@ -51,7 +51,7 @@ verify_checksum() {
     checksum_type="${3:-sha256}"  # Default to sha256
     
     if [ ! -f "$1" ]; then
-        echo "${RED}File not found: $1${NC}" >&2
+        printf "${RED}File not found: $1${NC}\n" >&2
         return 1
     fi
     
@@ -59,7 +59,7 @@ verify_checksum() {
     if command -v "${checksum_type}sum"  >/dev/null 2>&1; then
         actual_hash=$("${checksum_type}sum" "$1" |  cut  --delimiter=' ' --fields=1)
     else
-        echo "${RED}Checksum command not available: ${checksum_type}sum${NC}" >&2
+        printf "${RED}Checksum command not available: ${checksum_type}sum${NC}\n" >&2
         return 1
     fi
     
@@ -67,18 +67,18 @@ verify_checksum() {
     checksum_file=$(mktemp)
     curl --silent "$2" --output "$checksum_file" 2>/dev/null
     if [ ! -s "$checksum_file" ]; then
-        echo "${RED}Failed to download checksum from $2${NC}" >&2
+        printf "${RED}Failed to download checksum from $2${NC}\n" >&2
         rm "$checksum_file"
         return 1
     fi
     
     if grep --fixed-strings --silent --ignore-case "$actual_hash" "$checksum_file"; then
-        echo "${GREEN}✓ Checksum matched for $1${NC}" >&2
+        printf "${GREEN}✓ Checksum matched for $1${NC}\n" >&2
         rm "$checksum_file"
         return 0
     else
-        echo "${RED}✗ Checksum mismatch for $1${NC}" >&2
-        echo "${RED}  Expected: $actual_hash${NC}" >&2
+        printf "${RED}✗ Checksum mismatch for $1${NC}\n" >&2
+        printf "${RED}  Expected: $actual_hash${NC}\n" >&2
         return 2
     fi
 }
@@ -101,16 +101,16 @@ get_latest_release_sourceforge () {
 
 update_url() {
     if [ -z "$RELEASE" ]; then
-        echo "${RED}Failed to update release for $NAME${NC}"
+        printf "${RED}Failed to update release for $NAME${NC}\n"
 	return 1
     fi
-    echo "${BLUE}Found $NAME $EDITION release: $RELEASE${NC}"
+    printf "${BLUE}Found $NAME $EDITION release: $RELEASE${NC}\n"
     if [ "$1" ] || update_needed "$iso_name" "${ISO_DIR}${iso_name}"; then
-        echo "${CYAN}Updating $NAME to $RELEASE release...${NC}"
+        printf "${CYAN}Updating $NAME to $RELEASE release...${NC}\n"
         wget --no-verbose --show-progress -O "$iso_name" "${ISO_DIR}${iso_name}" || return 1
-        echo "${GREEN}Updated $NAME to release $RELEASE${NC}"
+        printf "${GREEN}Updated $NAME to release $RELEASE${NC}\n"
 	if [ "$sig_name" = "skip" ]; then
-	    echo "${YELLOW}Skipping checksum check${NC}"
+	    printf "${YELLOW}Skipping checksum check${NC}\n"
 	else
             verify_checksum "$iso_name" "${ISO_DIR}${sig_name}" || return $?
 	fi
