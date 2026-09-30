@@ -1,0 +1,72 @@
+#! /bin/sh
+source ./updater.sh
+
+MIRROR_URL="https://distrohub.kyiv.ua"
+
+# Update Arch
+NAME="Arch"
+BASE_URL="${MIRROR_URL}/archlinux/iso/"
+EDITION="latest"
+RELEASE="latest"
+ISO_DIR="${BASE_URL}${EDITION}/"
+iso_name="archlinux-x86_64.iso"
+sig_name="sha256sums.txt"
+if [ -z "$SPECIFIC" -o "$SPECIFIC" = "$NAME" ]; then
+    update_url
+fi
+
+# Update Mint
+# https://mirror.hostiko.network/linuxmint/stable/22.3/linuxmint-22.3-cinnamon-64bit.iso
+NAME="Mint"
+BASE_URL="${MIRROR_URL}/linuxmintiso/stable/"
+EDITION="cinnamon"
+RELEASE="$(get_latest_release "$BASE_URL")"
+ISO_DIR="${BASE_URL}${RELEASE}/"
+iso_name="linuxmint-${RELEASE}-${EDITION}-64bit.iso"
+sig_name="sha256sums.txt"
+if [ -z "$SPECIFIC" -o "$SPECIFIC" = "$NAME" ]; then
+    update_url
+fi
+
+# Update Fedora
+# https://distrohub.kyiv.ua/fedora/fedora/linux/releases/44/Workstation/x86_64/iso/Fedora-Workstation-Live-44-1.7.x86_64.iso
+NAME="Fedora"
+BASE_URL="${MIRROR_URL}/fedora/fedora/linux/releases/"
+EDITION="Workstation"
+RELEASE=$(get_latest_release "${BASE_URL}")
+ISO_DIR="${BASE_URL}${RELEASE}/${EDITION}/x86_64/iso/"
+iso_name=$(curl -s "$ISO_DIR" \
+    | grep -Po "(?<=href=\")Fedora-${EDITION}-.+-${RELEASE}-.+.iso(?=\")" )
+sig_name=$(curl -s "$ISO_DIR" \
+    |  grep -Po "(?<=href=\")Fedora-${EDITION}-.+CHECKSUM(?=\")" )
+if [ -z "$SPECIFIC" -o "$SPECIFIC" = "$NAME" ]; then
+    update_url
+fi
+
+NAME="Ubuntu"
+BASE_URL="${MIRROR_URL}/ubuntucd/"
+EDITION="desktop-amd64"
+RELEASE="$(get_latest_release "$BASE_URL")"
+ISO_DIR="${BASE_URL}${RELEASE}/"
+iso_name="ubuntu-${RELEASE}-${EDITION}.iso"
+sig_name="SHA256SUMS"
+if [ -z "$SPECIFIC" -o "$SPECIFIC" = "$NAME" ]; then
+    update_url
+fi
+
+# https://sourceforge.net/projects/reactos/files/latest/download
+# https://sourceforge.net/projects/reactos/files/ReactOS/0.4.16/ReactOS-0.4.16-i386.zip/download
+NAME="ReactOS"
+BASE_URL="https://sourceforge.net/projects/reactos/files/ReactOS/"
+EDITION="latest"
+RELEASE=$(get_latest_release_sourceforge "$BASE_URL")
+ISO_DIR="${BASE_URL}${RELEASE}/"
+iso_name="ReactOS-$RELEASE-i386.zip"
+sig_name="skip"
+file=$iso_name
+if [ -z "$SPECIFIC" -o "$SPECIFIC" = "$NAME" ]; then
+	echo "$iso_name"
+    update_url  && \
+    unzip -o "$file" #&& \
+    #rm "$file"
+fi
