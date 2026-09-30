@@ -99,7 +99,7 @@ update_url() {
         echo "Failed to update release for $NAME"
 	return 1
     fi
-    echo "$NAME release: $RELEASE"
+    echo "Found $NAME $EDITION release: $RELEASE"
     if [ $1 ] || update_needed "$iso_name" "${ISO_DIR}${iso_name}"; then
         echo "Updating $NAME to $RELEASE release..."
         wget --no-verbose --show-progress -O "$iso_name" "${ISO_DIR}${iso_name}" || return 1
